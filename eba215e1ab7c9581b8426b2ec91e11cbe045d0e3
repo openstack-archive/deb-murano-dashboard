@@ -1,0 +1,11 @@
+Code-Review+1: Adam Heczko <aheczko@mirantis.com>
+Verified+1: Murano CI
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 07 Oct 2015 14:58:53 +0000
+Reviewed-on: https://review.openstack.org/231889
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/stable/liberty

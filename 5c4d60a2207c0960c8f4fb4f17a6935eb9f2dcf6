@@ -1,0 +1,9 @@
+Verified+1: Murano CI
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 25 Mar 2016 12:05:47 +0000
+Reviewed-on: https://review.openstack.org/297542
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/stable/mitaka
