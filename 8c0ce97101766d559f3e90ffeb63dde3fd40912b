@@ -1,0 +1,12 @@
+Verified+1: Murano CI
+Code-Review+1: Sergey Kolekonov <skolekonov@mirantis.com>
+Code-Review+1: Timur Nurlygayanov <tnurlygayanov@mirantis.com>
+Code-Review+2: Timur Sufiev <tsufiev@mirantis.com>
+Code-Review+2: Dmitry Teselkin <dteselkin@mirantis.com>
+Workflow+1: Dmitry Teselkin <dteselkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 27 May 2014 12:48:43 +0000
+Reviewed-on: https://review.openstack.org/94421
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/release-0.5
