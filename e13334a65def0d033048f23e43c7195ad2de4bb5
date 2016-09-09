@@ -1,0 +1,10 @@
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+1: Murano CI
+Code-Review+2: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 24 Jun 2016 13:18:02 +0000
+Reviewed-on: https://review.openstack.org/333871
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/stable/liberty
