@@ -1,0 +1,11 @@
+Verified+1: Murano CI
+Code-Review+2: zhurong <zhu.rong@99cloud.net>
+Code-Review+1: Dmytro Dovbii <ddovbii@mirantis.com>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 29 Aug 2016 14:12:24 +0000
+Reviewed-on: https://review.openstack.org/355325
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/master
