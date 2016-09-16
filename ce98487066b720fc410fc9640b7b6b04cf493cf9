@@ -1,0 +1,13 @@
+Code-Review+2: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Code-Review+1: Valerii Kovalchuk <vakovalchuk@mirantis.com>
+Code-Review+1: Igor Yozhikov <iyozhikov@mirantis.com>
+Verified+1: Murano CI
+Code-Review+1: Haïkel Guémar <hguemar@fedoraproject.org>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 16 Sep 2016 15:23:05 +0000
+Reviewed-on: https://review.openstack.org/369456
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/stable/mitaka
