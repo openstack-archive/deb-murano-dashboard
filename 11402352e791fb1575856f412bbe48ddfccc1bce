@@ -1,0 +1,10 @@
+Code-Review+2: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Verified+1: Murano CI
+Code-Review+2: zhurong <zhu.rong@99cloud.net>
+Workflow+1: zhurong <zhu.rong@99cloud.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sat, 17 Sep 2016 07:30:59 +0000
+Reviewed-on: https://review.openstack.org/370624
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/master
