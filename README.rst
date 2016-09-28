@@ -14,9 +14,14 @@ Murano. With murano-dashboard, a user is able to easily manage and control
 an application catalog, running applications and created environments alongside
 with all other OpenStack resources.
 
-For developer purposes, please place OpenStack Dashboard extension file, located
-at *local/_50_murano.py* under horizon/openstack_dashboard/local/enabled
-directory and run horizon as usual.
+For developer purposes, please symlink the following OpenStack Dashboard plugin
+files:
+* muranodashboard/local/enabled/_50_murano.py into
+  horizon/openstack_dashboard/local/enabled/_50_murano.py
+* muranodashboard/local/local_settings.d/_50_murano.py into
+  horizon/openstack_dashboard/local/local_settings.d/_50_murano.py
+
+re-compress static assets and restart Horizon web-server as usual.
 
 Project Resources
 -----------------
@@ -25,4 +30,4 @@ Project Resources
 * `Wiki <https://wiki.openstack.org/wiki/Murano>`_
 * `Code Review <https://review.openstack.org/>`_
 * `Sources <https://wiki.openstack.org/wiki/Murano/SourceCode>`_
-* `Documentation <http://murano.readthedocs.org/>`_
+* `Documentation <http://docs.openstack.org/developer/murano/>`_

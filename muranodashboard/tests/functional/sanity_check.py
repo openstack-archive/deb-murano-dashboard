@@ -17,6 +17,7 @@ import SimpleHTTPServer
 import SocketServer
 import tempfile
 import time
+import unittest
 import uuid
 import zipfile
 
@@ -172,6 +173,178 @@ class TestSuiteEnvironment(base.ApplicationTestCase):
 
         delete_environment_btn = c.DeleteEnvironment
         self.check_element_on_page(by.By.XPATH, delete_environment_btn)
+
+    def test_new_environment_sort(self):
+        """Test check that environment during creation is not sorted
+
+        Scenario:
+            1. Create two environments.
+            2. Add app to one of them and deploy it.
+            3. Start creating new environment.
+            4. Check that row with new environment is present in the table
+            head.
+            5. Sort rows by name and check it again.
+            6. Sort rows in other direction and check it again.
+        """
+        self.go_to_submenu('Environments')
+        self.create_environment('quick-env-1')
+        self.add_app_to_env(self.deployingapp_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.go_to_submenu('Environments')
+        self.driver.find_element_by_id(
+            'environments__action_CreateEnvironment').click()
+        self.fill_field(by.By.ID, 'id_name', 'quick-env-3')
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.NewEnvRow)
+        self.driver.find_element_by_css_selector(c.TableSorterByName).click()
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.NewEnvRow)
+        self.driver.find_element_by_css_selector(c.TableSorterByName).click()
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.NewEnvRow)
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-2', 'Ready'),
+                                   sec=90)
+
+    def test_new_environments_in_one_moment(self):
+        """Test check that only one environment can be created in one moment
+
+        Scenario:
+            1. Go to environments submenu.
+            2. Create one environment.
+            3. Go to environments submenu.
+            4. Press create new environment button.
+            5. Press create new environment button again.
+            6. Check that only one form for creating environment is created.
+        """
+        self.go_to_submenu('Environments')
+        self.create_environment('temp_environment')
+        self.go_to_submenu('Environments')
+        self.driver.find_element_by_id(
+            'environments__action_CreateEnvironment').click()
+        self.driver.find_element_by_id(
+            'environments__action_CreateEnvironment').click()
+        new_environments = self.driver.find_elements_by_class_name('new_env')
+        self.assertEqual(len(new_environments), 1)
+
+    def test_env_status_new_session_add_to_empty(self):
+        """Test that environments status is correct in the new session
+
+        Scenario:
+            1. Create environment.
+            2. Add app to environment.
+            3. Check that env status is 'Ready to deploy'.
+            4. Log out.
+            5. Log in.
+            6. Check that env status is 'Ready to configure'.
+        """
+        self.add_app_to_env(self.mockapp_id)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to deploy'))
+        self.log_out()
+        self.log_in(cfg.common.user, cfg.common.password)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to configure'))
+
+    def test_env_status_new_session_add_to_not_empty(self):
+        """Test that environments status is correct in the new session
+
+        Scenario:
+            1. Create environment.
+            2. Add app to environment.
+            3. Deploy environment.
+            4. Add one more app to environment.
+            5. Check that env status is 'Ready to deploy'.
+            6. Log out.
+            7. Log in.
+            8. Check that env status is 'Ready'.
+        """
+        self.add_app_to_env(self.mockapp_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.check_element_on_page(by.By.XPATH,
+                                   c.Status.format('Ready'),
+                                   sec=90)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.LINK_TEXT, 'quick-env-1')
+        env_id = self.get_element_id('quick-env-1')
+        self.add_app_to_env(self.mockapp_id, 'TestApp1', env_id)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to deploy'))
+        self.log_out()
+        self.log_in(cfg.common.user, cfg.common.password)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready'))
+
+    def test_env_status_new_session_remove_from_one(self):
+        """Test that environments status is correct in the new session
+
+        Scenario:
+            1. Create environment.
+            2. Add app to environment.
+            3. Deploy environment.
+            4. Remove app from environment.
+            5. Check that env status is 'Ready to deploy'.
+            6. Log out.
+            7. Log in.
+            8. Check that env status is 'Ready'.
+        """
+        self.add_app_to_env(self.mockapp_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.check_element_on_page(by.By.XPATH,
+                                   c.Status.format('Ready'),
+                                   sec=90)
+        self.delete_component('TestApp')
+        self.check_element_not_on_page(by.By.LINK_TEXT, 'TestApp')
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to deploy'))
+        self.log_out()
+        self.log_in(cfg.common.user, cfg.common.password)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready'))
+
+    def test_env_status_new_session_remove_from_two(self):
+        """Test that environments status is correct in the new session
+
+        Scenario:
+            1. Create environment.
+            2. Add two apps to environment.
+            3. Deploy environment.
+            4. Remove one app from environment.
+            5. Check that env status is 'Ready to deploy'.
+            6. Log out.
+            7. Log in.
+            8. Check that env status is 'Ready'.
+        """
+        self.add_app_to_env(self.mockapp_id)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.LINK_TEXT, 'quick-env-1')
+        env_id = self.get_element_id('quick-env-1')
+        self.add_app_to_env(self.mockapp_id, 'TestApp1', env_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.check_element_on_page(by.By.XPATH,
+                                   c.Status.format('Ready'),
+                                   sec=90)
+        self.delete_component('TestApp1')
+        self.check_element_not_on_page(by.By.LINK_TEXT, 'TestApp1')
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to deploy'))
+        self.log_out()
+        self.log_in(cfg.common.user, cfg.common.password)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready'))
 
 
 class TestSuiteImage(base.ImageTestCase):
@@ -573,9 +746,6 @@ class TestSuiteApplications(base.ApplicationTestCase):
 
         self.driver.find_element_by_id('services__action_deploy_env').click()
         self.check_element_on_page(by.By.XPATH,
-                                   c.Status.format('Deploying'))
-        self.check_element_on_page(by.By.XPATH, c.CellStatus.format('unknown'))
-        self.check_element_on_page(by.By.XPATH,
                                    c.Status.format('Ready'),
                                    sec=90)
         self.check_element_on_page(by.By.XPATH, c.CellStatus.format('up'))
@@ -772,6 +942,8 @@ class TestSuiteApplications(base.ApplicationTestCase):
         for app_name in app_names[-1::]:
             self.check_element_not_on_page(by.By.LINK_TEXT, app_name)
 
+    @unittest.skip("This test gives sporadic false positives."
+                   "To be fixed in bug #1611732")
     def test_deploy_several_mock_apps_in_a_row(self):
         """Checks that app works after another app is deployed
 
@@ -1049,10 +1221,10 @@ class TestSuitePackages(base.PackageTestCase):
             9. Switch to the new project and check that the application
                is not available in the catalog
         """
-        default_project = self.keystone_client.project_name
+        default_project = self.auth_ref.project_name
         new_project = str(uuid.uuid4())[::4]
         project_id = self.create_project(new_project)
-        self.add_user_to_project(project_id, self.keystone_client.user_id)
+        self.add_user_to_project(project_id, self.auth_ref.user_id)
         # Generally the new project will appear in the dropdown menu only after
         # page refresh. But in this case refresh is not necessary.
 
@@ -1225,11 +1397,17 @@ class TestSuitePackages(base.PackageTestCase):
         self.wait_for_alert_message()
 
         pkg_name = self.archive_name
+
+        self.check_element_on_page(by.By.LINK_TEXT, pkg_name)
+
         self.driver.find_element_by_xpath(
             "//a[contains(text(), '{0}')]".format(pkg_name)).click()
         self.assertIn(pkg_name,
                       self.driver.find_element(by.By.XPATH, c.AppDetail).text)
 
+    @unittest.skipIf(utils.glare_enabled(),
+                     "GLARE backend doesn't expose category count"
+                     "Bug #1618228")
     def test_add_pkg_to_category_non_admin(self):
         """Test package addition to category as non admin user
 
@@ -1305,6 +1483,9 @@ class TestSuitePackages(base.PackageTestCase):
         self.wait_for_alert_message()
         self.check_element_not_on_page(by.By.XPATH, delete_new_category_btn)
 
+    @unittest.skipIf(utils.glare_enabled(),
+                     "This test fails with GLARE, shoud be fixed as part of "
+                     "bug #1618266")
     def test_sharing_app_without_permission(self):
         """Tests sharing Murano App without permission
 
@@ -1721,7 +1902,9 @@ class TestSuiteRepository(base.PackageTestCase):
         self.check_element_not_on_page(
             by.By.XPATH, c.AppPackages.format(pkg_name))
 
-    def test_import_big_zip_file(self):
+    @unittest.skipIf(utils.glare_enabled(),
+                     'GLARE allows importing big files')
+    def test_import_big_zip_file_negative(self):
         """Import very big zip archive.
 
         Scenario:
@@ -1757,6 +1940,47 @@ class TestSuiteRepository(base.PackageTestCase):
         self.check_alert_message(error_message)
 
         self.check_element_not_on_page(
+            by.By.XPATH, c.AppPackages.format(pkg_name))
+
+    @unittest.skipUnless(utils.glare_enabled(),
+                         'Without GLARE backend murano restricts file size')
+    def test_import_big_zip_file(self):
+        """Import very big zip archive.
+
+        Scenario:
+            1. Log in Horizon with admin credentials
+            2. Navigate to 'Packages' page
+            3. Click 'Import Package' and select 'File' as a package source
+            4. Choose very big zip file
+            5. Click on 'Next' button
+            6. Check that error message that user can't upload file more than
+                5 MB is displayed
+        """
+        pkg_name = self.gen_random_resource_name('pkg')
+        self._make_big_zip_pkg(name=pkg_name,
+                               size=10 * 1024 * 1024)
+
+        # import package and choose big zip file for it
+        self.navigate_to('Manage')
+        self.go_to_submenu('Packages')
+        self.driver.find_element_by_id(c.UploadPackage).click()
+        sel = self.driver.find_element_by_css_selector(
+            "select[name='upload-import_type']")
+        sel = ui.Select(sel)
+        sel.select_by_value("by_name")
+
+        el = self.driver.find_element_by_css_selector(
+            "input[name='upload-repo_name']")
+        el.send_keys("{0}".format(pkg_name))
+        self.driver.find_element_by_xpath(c.InputSubmit).click()
+
+        # no additional input needed
+        self.driver.find_element_by_xpath(c.InputSubmit).click()
+        self.driver.find_element_by_xpath(c.InputSubmit).click()
+
+        self.wait_for_alert_message()
+
+        self.check_element_on_page(
             by.By.XPATH, c.AppPackages.format(pkg_name))
 
     def test_import_bundle_when_dependencies_installed(self):
@@ -1849,8 +2073,12 @@ class TestSuitePackageCategory(base.PackageTestCase):
         self.driver.find_element_by_xpath(c.InputSubmit).click()
 
         self.wait_for_alert_message()
-        self.check_element_on_page(
-            by.By.XPATH, c.CategoryPackageCount.format(self.category, 0))
+
+        if not utils.glare_enabled():
+            # TODO(kzaitsev): see Bug #1618228
+            # GLARE doesn't expose category package count
+            self.check_element_on_page(
+                by.By.XPATH, c.CategoryPackageCount.format(self.category, 0))
 
         # save category id
         self.category_id = self.get_element_id(self.category)
@@ -1861,6 +2089,9 @@ class TestSuitePackageCategory(base.PackageTestCase):
         # delete created category
         self.murano_client.categories.delete(self.category_id)
 
+    @unittest.skipIf(utils.glare_enabled(),
+                     "GLARE backend doesn't expose category count"
+                     "Bug #1618228")
     def test_add_delete_category_for_package(self):
         """Test package importing with new category and changing the category.
 
@@ -2003,6 +2234,9 @@ class TestSuitePackageCategory(base.PackageTestCase):
                          "with an existing object.")
         self.check_alert_message(error_message)
 
+    @unittest.skipIf(utils.glare_enabled(),
+                     "GLARE backend doesn't expose category count"
+                     "Bug #1618228")
     def test_delete_category_with_package(self):
         """Deletion of category with package in it
 
@@ -2151,8 +2385,8 @@ class TestSuiteMultipleEnvironments(base.ApplicationTestCase):
             4. Deploy created environments at once
             5. Abandon environments before they are deployed
         """
-        self.add_app_to_env(self.mockapp_id)
-        self.add_app_to_env(self.mockapp_id)
+        self.add_app_to_env(self.deployingapp_id)
+        self.add_app_to_env(self.deployingapp_id)
         self.go_to_submenu('Environments')
         self.driver.find_element_by_css_selector(
             "label[for=ui-id-1]").click()
@@ -2167,3 +2401,100 @@ class TestSuiteMultipleEnvironments(base.ApplicationTestCase):
         self.wait_for_alert_message()
         self.check_element_not_on_page(by.By.LINK_TEXT, 'quick-env-1')
         self.check_element_not_on_page(by.By.LINK_TEXT, 'quick-env-2')
+
+    def test_check_necessary_buttons_are_available(self):
+        """Test check if the necessary buttons are available
+
+        Scenario:
+            1. Create 4 environments with different statuses.
+            2. Check that all action buttons are on page.
+            3. Check that "Deploy Environments" button is only clickable
+            if env with status "Ready to deploy" is checked
+            4. Check that "Delete Environments" button is only clickable
+            if envs with statuses "Ready", "Ready to deploy", "Ready to
+            configure" are checked
+            5. Check that "Abandon Environments" button is only clickable
+            if env with status "Ready", "Deploying" are checked
+        """
+        self.go_to_submenu('Environments')
+        self.create_environment('quick-env-1')
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-1',
+                                                      'Ready to configure'))
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.DeleteEnvironments)
+
+        self.add_app_to_env(self.mockapp_id)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-2',
+                                                      'Ready to deploy'))
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.DeployEnvironments)
+
+        self.add_app_to_env(self.mockapp_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.check_element_on_page(by.By.XPATH,
+                                   c.Status.format('Ready'),
+                                   sec=90)
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-3', 'Ready'))
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.AbandonEnvironments)
+
+        self.add_app_to_env(self.deployingapp_id)
+        self.driver.find_element_by_id('services__action_deploy_env').click()
+        self.go_to_submenu('Environments')
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-4',
+                                                      'Deploying'))
+
+        env_1_checkbox = self.driver.find_element_by_xpath(
+            c.EnvCheckbox.format('quick-env-1'))
+        env_2_checkbox = self.driver.find_element_by_xpath(
+            c.EnvCheckbox.format('quick-env-2'))
+        env_3_checkbox = self.driver.find_element_by_xpath(
+            c.EnvCheckbox.format('quick-env-3'))
+
+        # select 'Ready to deploy' env
+        env_2_checkbox.click()
+        # check that Deploy is possible
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.DeployEnvironments)
+        self.check_element_not_on_page(by.By.CSS_SELECTOR,
+                                       c.DeployEnvironmentsDisabled)
+
+        # add 'Ready to configure' env to selection
+        env_1_checkbox.click()
+        # check that Deploy is no more possible
+        self.check_element_on_page(by.By.CSS_SELECTOR,
+                                   c.DeployEnvironmentsDisabled)
+
+        # add 'Ready' env to selection
+        env_3_checkbox.click()
+        # check that Delete is possible
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.DeleteEnvironments)
+        self.check_element_not_on_page(by.By.CSS_SELECTOR,
+                                       c.DeleteEnvironmentsDisabled)
+
+        # add 'Deploying' env to selection
+        env_4_checkbox = self.driver.find_element_by_xpath(
+            c.EnvCheckbox.format('quick-env-4'))
+        env_4_checkbox.click()
+        # check that Delete is no more possible
+        self.check_element_on_page(by.By.CSS_SELECTOR,
+                                   c.DeleteEnvironmentsDisabled)
+
+        # check that Abandon is not possible
+        self.check_element_on_page(by.By.CSS_SELECTOR,
+                                   c.AbandonEnvironmentsDisabled)
+
+        # unselect all envs but 'Deploying' and 'Ready'
+        env_1_checkbox.click()
+        env_2_checkbox.click()
+        # check that Abandon is now possible
+        self.check_element_on_page(by.By.CSS_SELECTOR, c.AbandonEnvironments)
+        self.check_element_not_on_page(by.By.CSS_SELECTOR,
+                                       c.AbandonEnvironmentsDisabled)
+
+        self.check_element_on_page(by.By.XPATH,
+                                   c.EnvStatus.format('quick-env-4', 'Ready'),
+                                   sec=90)

@@ -25,15 +25,16 @@ from horizon import messages
 from horizon import tables
 from horizon.utils import filters
 from muranoclient.common import exceptions as exc
+from openstack_dashboard import policy
 from oslo_log import log as logging
 
 from muranodashboard import api as api_utils
 from muranodashboard.api import packages as pkg_api
 from muranodashboard.catalog import views as catalog_views
+from muranodashboard.common import utils as md_utils
 from muranodashboard.environments import api
 from muranodashboard.environments import consts
 from muranodashboard.packages import consts as pkg_consts
-
 
 LOG = logging.getLogger(__name__)
 
@@ -87,8 +88,9 @@ class CreateEnvironment(tables.LinkAction):
     verbose_name = _('Create Environment')
     url = 'horizon:murano:environments:create_environment'
     classes = ('btn-launch', 'add_env')
-    redirect_url = "horizon:project:murano:environments"
+    redirect_url = "horizon:murano:environments:index"
     icon = 'plus'
+    policy_rules = (("murano", "create_environment"),)
 
     def allowed(self, request, datum):
         return True if self.table.data else False
@@ -104,8 +106,9 @@ class CreateEnvironment(tables.LinkAction):
             exceptions.handle(request, msg, redirect=redirect)
 
 
-class DeleteEnvironment(tables.DeleteAction):
-    redirect_url = "horizon:project:murano:environments"
+class DeleteEnvironment(policy.PolicyTargetMixin, tables.DeleteAction):
+    redirect_url = "horizon:murano:environments:index"
+    policy_rules = (("murano", "delete_environment"),)
 
     @staticmethod
     def action_present(count):
@@ -147,7 +150,8 @@ class AbandonEnvironment(tables.DeleteAction):
     help_text = _("This action cannot be undone. Any resources created by "
                   "this environment will have to be released manually.")
     name = 'abandon'
-    redirect_url = "horizon:project:murano:environments"
+    redirect_url = "horizon:murano:environments:index"
+    policy_rules = (("murano", "delete_environment"),)
 
     @staticmethod
     def action_present(count):
@@ -276,11 +280,8 @@ class DeployEnvironment(tables.BatchAction):
     def allowed(self, request, environment):
         """Limit when 'Deploy Environment' button is shown
 
-        'Deploy environment' is not shown in several cases:
-        * when deploy is already in progress
-        * delete is in progress
-        * no new services added to the environment (after env creation
-          or successful deploy or delete failure)
+        'Deploy environment' is shown when set of environment's services
+        changed or previous deploy failed.
         If environment has already deployed services,
         button is shown as 'Update environment'
         """
@@ -298,13 +299,10 @@ class DeployEnvironment(tables.BatchAction):
             self.action_past = self.action_past_deploy
 
         status = getattr(environment, 'status', None)
-        if (status != consts.STATUS_ID_DEPLOY_FAILURE and
-                not environment.has_new_services):
-            return False
-        if (status in consts.NO_ACTION_ALLOWED_STATUSES or
-                status == consts.STATUS_ID_READY):
-            return False
-        return True
+        if status in (consts.STATUS_ID_PENDING,
+                      consts.STATUS_ID_DEPLOY_FAILURE):
+            return True
+        return False
 
     def action(self, request, environment_id):
         try:
@@ -377,6 +375,11 @@ class ShowEnvironmentServices(tables.LinkAction):
 class UpdateEnvironmentRow(tables.Row):
     ajax = True
 
+    def __init__(self, table, datum=None):
+        super(UpdateEnvironmentRow, self).__init__(table, datum)
+        if hasattr(datum, 'status'):
+            self.attrs['status'] = datum.status
+
     def get_data(self, request, environment_id):
         try:
             return api.environment_get(request, environment_id)
@@ -399,6 +402,10 @@ class UpdateServiceRow(tables.Row):
 
 
 class UpdateName(tables.UpdateAction):
+    def allowed(self, request, environment, cell):
+        policy_rule = (("murano", "update_environment"),)
+        return policy.check(policy_rule, request)
+
     def update_cell(self, request, datum, obj_id, cell_name, new_cell_value):
         try:
             if not new_cell_value or new_cell_value.isspace():
@@ -427,18 +434,33 @@ class UpdateName(tables.UpdateAction):
 
 
 class EnvironmentsTable(tables.DataTable):
-    name = tables.Column('name',
-                         link='horizon:murano:environments:services',
-                         verbose_name=_('Name'),
-                         form_field=forms.CharField(required=False),
-                         update_action=UpdateName,
-                         truncate=40)
+    name = md_utils.Column(
+        'name',
+        link='horizon:murano:environments:services',
+        verbose_name=_('Name'),
+        form_field=forms.CharField(required=False),
+        update_action=UpdateName)
 
     status = tables.Column('status',
                            verbose_name=_('Status'),
                            status=True,
                            status_choices=consts.STATUS_CHOICES,
                            display_choices=consts.STATUS_DISPLAY_CHOICES)
+
+    def get_env_detail_link(self, environment):
+        # NOTE: using the policy check for show_environment
+        if policy.check((("murano", "show_environment"),),
+                        self.request, target={"environment": environment}):
+            return reverse("horizon:murano:environments:services",
+                           args=(environment.id,))
+        return None
+
+    def __init__(self, request, data=None, needs_form_wrapper=None, **kwargs):
+        super(EnvironmentsTable,
+              self).__init__(request, data=data,
+                             needs_form_wrapper=needs_form_wrapper,
+                             **kwargs)
+        self.columns['name'].get_link_url = self.get_env_detail_link
 
     class Meta(object):
         name = 'environments'
@@ -463,9 +485,10 @@ def get_service_type(datum):
 
 
 class ServicesTable(tables.DataTable):
-    name = tables.Column('name',
-                         verbose_name=_('Name'),
-                         link=get_service_details_link)
+    name = md_utils.Column(
+        'name',
+        verbose_name=_('Name'),
+        link=get_service_details_link)
 
     _type = tables.Column(get_service_type,
                           verbose_name=_('Type'))
@@ -510,7 +533,7 @@ class ServicesTable(tables.DataTable):
 
             class CustomAction(tables.LinkAction):
                 name = action_datum['name']
-                verbose_name = action_datum['name']
+                verbose_name = action_datum.get('title') or name
                 url = reverse('horizon:murano:environments:start_action',
                               args=(environment_id, action_datum['id']))
                 classes = _classes
@@ -537,7 +560,7 @@ class ServicesTable(tables.DataTable):
         return actions
 
     def get_repo_url(self):
-        return pkg_consts.MURANO_REPO_URL
+        return pkg_consts.DISPLAY_MURANO_REPO_URL
 
     def get_pkg_def_url(self):
         return reverse('horizon:murano:packages:index')
@@ -588,8 +611,7 @@ class DeploymentsTable(tables.DataTable):
 
 
 class EnvConfigTable(tables.DataTable):
-    name = tables.Column('name',
-                         verbose_name=_('Name'))
+    name = md_utils.Column('name', verbose_name=_('Name'))
     _type = tables.Column(
         lambda datum: get_service_type(datum) or 'Unknown',
         verbose_name=_('Type'))
