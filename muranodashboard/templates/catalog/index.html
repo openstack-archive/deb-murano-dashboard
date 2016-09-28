@@ -9,7 +9,7 @@
   {{ block.super }}
   {% compress css %}
     <link rel="stylesheet" href="{% static 'muranodashboard/css/catalog.css' %}">
-    <link rel="stylesheet" href="{% static 'horizon/lib/font-awesome/css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'horizon/lib/font_awesome/css/font-awesome.min.css' %}">
   {% endcompress %}
 {% endblock %}
 
@@ -72,7 +72,7 @@
                             <div class="form-group has-feedback">
                                 <input class="form-control"
                                        value="{{ search }}" type="text"
-                                       name="search" placeholder="Filter">
+                                       name="search" placeholder="{% trans 'Filter' %}">
                                 <span class="fa fa-search form-control-feedback search-icon"></span>
                             </div>
                             <div class="form-group">
@@ -112,7 +112,7 @@
             <p class="col-xs-12 alert alert-info">
             {% if no_apps %}
             {% blocktrans trimmed %}There are no applications in the catalog. You can import apps from
-                <a href="{{ repo_url }}" target="_blank"> {{ repo_url }}</a>.{% endblocktrans %}
+                <a href="{{ display_repo_url }}" target="_blank"> {{ display_repo_url }}</a>.{% endblocktrans %}
                 <br><br>
                 {% blocktrans trimmed %}Go to
                 <b>

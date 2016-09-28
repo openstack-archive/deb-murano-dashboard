@@ -8,13 +8,13 @@
   {{ block.super }}
   {% compress css %}
     <link rel="stylesheet" href="{% static 'muranodashboard/css/catalog.css' %}">
-    <link rel="stylesheet" href="{% static 'horizon/lib/font-awesome/css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'horizon/lib/font_awesome/css/font-awesome.min.css' %}">
   {% endcompress %}
 {% endblock %}
 
 {% block page_header %}
-    {% include "catalog/_details_page_header.html" with name=app.name %}
-{% endblock page_header %}
+  {% include "horizon/common/_detail_header.html" %}
+{% endblock %}
 
 {% block main %}
 <div class="table_wrapper">
