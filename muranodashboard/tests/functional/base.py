@@ -21,13 +21,15 @@ import uuid
 
 from glanceclient import client as gclient
 from keystoneauth1.identity import v3
-from keystoneclient.v3 import client
-from muranoclient import client as mclient
+from keystoneauth1 import session as ks_session
+from keystoneclient.v3 import client as ks_client
+from muranoclient.glance import client as glare_client
+import muranoclient.v1.client as mclient
 from oslo_log import handlers
 from oslo_log import log
 from selenium.common import exceptions as exc
 from selenium import webdriver
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common import action_chains
 import selenium.webdriver.common.by as by
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support import ui
@@ -61,12 +63,23 @@ class UITestCase(BaseDeps):
                            project_domain_name='Default',
                            project_name=cfg.common.tenant,
                            auth_url=cfg.common.keystone_url)
-        cls.keystone_client = client.Client(
-            auth_url=cfg.common.keystone_url, auth=auth,
-            username=cfg.common.user, password=cfg.common.password)
+        session = ks_session.Session(auth=auth)
+        cls.keystone_client = ks_client.Client(session=session)
+        cls.auth_ref = auth.get_auth_ref(session)
+        cls.service_catalog = cls.auth_ref.service_catalog
+        if utils.glare_enabled():
+            glare_endpoint = "http://127.0.0.1:9494"
+            artifacts_client = glare_client.Client(
+                endpoint=glare_endpoint, token=cls.auth_ref.auth_token,
+                insecure=False, key_file=None, ca_file=None, cert_file=None,
+                type_name="murano", type_version=1)
+        else:
+            artifacts_client = None
         cls.murano_client = mclient.Client(
-            '1', endpoint=cfg.common.murano_url,
-            token=cls.keystone_client.auth_token)
+            artifacts_client=artifacts_client,
+            endpoint_override=cfg.common.murano_url,
+            session=session)
+
         cls.url_prefix = urlparse.urlparse(cfg.common.horizon_url).path or ''
         if cls.url_prefix.endswith('/'):
             cls.url_prefix = cls.url_prefix[:-1]
@@ -122,13 +135,13 @@ class UITestCase(BaseDeps):
             projects = cls.keystone_client.projects.list()
             tenant_id = [project.id for project in projects
                          if project.name == cfg.common.tenant][0]
-            cls.keystone_client.users.create(name, domain='Default',
+            cls.keystone_client.users.create(name, domain='default',
                                              password=password,
                                              email=email,
                                              project=tenant_id,
                                              enabled=True)
         else:
-            cls.keystone_client.users.create(name, domain='Default',
+            cls.keystone_client.users.create(name, domain='default',
                                              password=password,
                                              email=email,
                                              project=tenant_id,
@@ -158,13 +171,15 @@ class UITestCase(BaseDeps):
         self.projects_to_delete.append(project.id)
         return project.id
 
-    def add_user_to_project(self, project_id, user_name, user_role=None):
+    def add_user_to_project(self, project_id, user_id, user_role=None):
         if not user_role:
             roles = self.keystone_client.roles.list()
             role_id = [role.id for role in roles if role.name == 'Member'][0]
-        if not user_name:
+        if not user_id:
             user_name = cfg.common.user
-        self.keystone_client.roles.grant(role_id, user=user_name,
+            users = self.keystone_client.users.list()
+            user_id = [user.id for user in users if user.name == user_name][0]
+        self.keystone_client.roles.grant(role_id, user=user_id,
                                          project=project_id)
 
     def switch_to_project(self, name):
@@ -308,7 +323,7 @@ class UITestCase(BaseDeps):
             'button.ajax-inline-edit')
 
         # hover to make pencil visible
-        hover = ActionChains(self.driver).move_to_element(el_td)
+        hover = action_chains.ActionChains(self.driver).move_to_element(el_td)
         hover.perform()
         el_pencil.click()
 
@@ -374,6 +389,12 @@ class PackageBase(UITestCase):
             cls.murano_client,
             "HotExample",
             {"tags": ["hot"]}, hot=True)
+        cls.deployingapp_id = utils.upload_app_package(
+            cls.murano_client,
+            "DeployingApp",
+            {"categories": ["Web"], "tags": ["tag"]},
+            hot=False,
+            package_dir=consts.DeployingPackageDir)
 
     @classmethod
     def tearDownClass(cls):
@@ -381,16 +402,16 @@ class PackageBase(UITestCase):
         cls.murano_client.packages.delete(cls.mockapp_id)
         cls.murano_client.packages.delete(cls.postgre_id)
         cls.murano_client.packages.delete(cls.hot_app_id)
+        cls.murano_client.packages.delete(cls.deployingapp_id)
 
 
 class ImageTestCase(PackageBase):
     @classmethod
     def setUpClass(cls):
         super(ImageTestCase, cls).setUpClass()
-        glance_endpoint = cls.keystone_client.service_catalog.url_for(
-            service_type='image', endpoint_type='publicURL')
+        glance_endpoint = cls.service_catalog.url_for(service_type='image')
         cls.glance = gclient.Client('1', endpoint=glance_endpoint,
-                                    token=cls.keystone_client.auth_token)
+                                    session=cls.keystone_client.session)
         cls.image_title = 'New Image ' + str(time.time())
         cls.image = cls.upload_image(cls.image_title)
 
@@ -497,9 +518,15 @@ class ApplicationTestCase(ImageTestCase):
         self.driver.find_element_by_xpath(consts.InputSubmit).click()
         self.wait_for_alert_message()
 
-    def add_app_to_env(self, app_id, app_name='TestApp'):
+    def add_app_to_env(self, app_id, app_name='TestApp', env_id=None):
         self.go_to_submenu('Browse')
-        self.select_and_click_action_for_app('quick-add', app_id)
+        if env_id:
+            action = 'add'
+            app = '{0}/{1}'.format(app_id, env_id)
+        else:
+            action = 'quick-add'
+            app = app_id
+        self.select_and_click_action_for_app(action, app)
         field_id = "{0}_0-name".format(app_id)
         self.fill_field(by.By.ID, field_id, value=app_name)
         self.driver.find_element_by_xpath(consts.ButtonSubmit).click()
@@ -507,7 +534,12 @@ class ApplicationTestCase(ImageTestCase):
         self.select_from_list('osImage', self.image.id)
 
         self.driver.find_element_by_xpath(consts.InputSubmit).click()
-        self.wait_for_alert_message()
+        if env_id:
+            self.driver.find_element_by_xpath(consts.InputSubmit).click()
+            self.wait_element_is_clickable(by.By.ID, consts.AddComponent)
+            self.check_element_on_page(by.By.LINK_TEXT, app_name)
+        else:
+            self.wait_for_alert_message()
 
 
 class PackageTestCase(ApplicationTestCase):

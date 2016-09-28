@@ -1,3 +1,13 @@
+murano-dashboard (1:3.0.0~rc-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Using OpenStack Gerrit as VCS URLs:
+    - Point .gitreview to packaging-deb project.
+    - Add .gitreview in extend-diff-ignore.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 28 Sep 2016 17:22:50 +0200
+
 murano-dashboard (1:3.0.0~b2-1) experimental; urgency=medium
 
   * New upstream release.

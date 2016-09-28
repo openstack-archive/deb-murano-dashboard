@@ -1,3 +1,15 @@
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 import json
 import logging
 import os
@@ -6,6 +18,7 @@ import zipfile
 
 from oslo_log import log
 
+import config.config as cfg
 from muranodashboard.tests.functional import consts
 
 log = log.getLogger(__name__).logger
@@ -31,11 +44,12 @@ class ImageException(Exception):
         return self._error_string
 
 
-def upload_app_package(client, app_name, data, hot=False):
+def upload_app_package(client, app_name, data, hot=False,
+                       package_dir=consts.PackageDir):
     try:
         if not hot:
-            manifest = os.path.join(consts.PackageDir, 'manifest.yaml')
-            archive = compose_package(app_name, manifest, consts.PackageDir)
+            manifest = os.path.join(package_dir, 'manifest.yaml')
+            archive = compose_package(app_name, manifest, package_dir)
         else:
             manifest = os.path.join(consts.HotPackageDir, 'manifest.yaml')
             archive = compose_package(app_name, manifest,
@@ -95,3 +109,7 @@ def compose_bundle(bundle_path, app_names):
         bundle['Packages'].append({'Name': app_name})
     with open(bundle_path, 'w') as f:
         f.write(json.dumps(bundle))
+
+
+def glare_enabled():
+    return cfg.common.packages_service == "glare"

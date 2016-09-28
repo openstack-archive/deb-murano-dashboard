@@ -183,25 +183,12 @@ def cleaned_latest_apps(request):
     Verifies, that apps in the list are either public or belong to current
     project.
     """
-
-    cleaned_apps, cleaned_app_ids = [], []
-    for app_id in request.session.get('latest_apps', []):
-        try:
-            # TODO(kzaitsev): we have to update this to 1 request per list of
-            # apps. Should be trivial and should remove the need to verify that
-            # apps are available. bug/1559066
-            app = api.muranoclient(request).packages.get(app_id)
-        except exc.HTTPNotFound:
-            continue
-        else:
-            if app.type != 'Application':
-                continue
-            if (app.owner_id == request.session['token'].project['id'] or
-                    app.is_public):
-                cleaned_apps.append(app)
-                cleaned_app_ids.append(app_id)
-    request.session['latest_apps'] = collections.deque(cleaned_app_ids)
-    return cleaned_apps
+    id_param = "in:" + ",".join(request.session.get('latest_apps', []))
+    query_params = {'type': 'Application', 'catalog': True, 'id': id_param}
+    user_apps = list(api.muranoclient(request).packages.filter(**query_params))
+    request.session['latest_apps'] = collections.deque([app.id
+                                                        for app in user_apps])
+    return user_apps
 
 
 def clear_forms_data(func):
@@ -452,8 +439,9 @@ class Wizard(generic_views.PageTitleMixin, views.ModalFormMixin, LazyWizard):
         else:
             env_name = get_next_quick_environment_name(self.request)
 
-        context['field_descriptions'] = services.get_app_field_descriptions(
+        field_descr, extended_descr = services.get_app_field_descriptions(
             self.request, app_id, self.steps.index)
+
         context.update({'type': app.fully_qualified_name,
                         'service_name': app.name,
                         'app_id': app_id,
@@ -462,6 +450,8 @@ class Wizard(generic_views.PageTitleMixin, views.ModalFormMixin, LazyWizard):
                         'do_redirect': self.get_wizard_flag('do_redirect'),
                         'drop_wm_form': self.get_wizard_flag('drop_wm_form'),
                         'prefix': self.prefix,
+                        'field_descriptions': field_descr,
+                        'extended_descriptions': extended_descr,
                         })
         return context
 
@@ -597,7 +587,7 @@ class IndexView(generic_views.PageTitleMixin, list_view.ListView):
 
         context['tenant_id'] = self.request.session['token'].tenant['id']
         context.update(get_environments_context(self.request))
-        context['repo_url'] = pkg_consts.MURANO_REPO_URL
+        context['display_repo_url'] = pkg_consts.DISPLAY_MURANO_REPO_URL
         context['pkg_def_url'] = reverse('horizon:murano:packages:index')
         context['no_apps'] = True
         if self.get_current_category() != ALL_CATEGORY_NAME or search:

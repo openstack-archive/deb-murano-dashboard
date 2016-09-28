@@ -20,10 +20,12 @@ from horizon import exceptions
 from horizon import messages
 from horizon import tables
 from horizon.utils import filters
+from openstack_dashboard import policy
 from oslo_log import log as logging
 
 from muranoclient.common import exceptions as exc
 from muranodashboard import api
+from muranodashboard.common import utils as md_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -34,6 +36,7 @@ class ImportBundle(tables.LinkAction):
     url = 'horizon:murano:packages:import_bundle'
     classes = ('ajax-modal',)
     icon = "plus"
+    policy_rules = (("murano", "upload_package"),)
 
 
 class ImportPackage(tables.LinkAction):
@@ -42,6 +45,7 @@ class ImportPackage(tables.LinkAction):
     url = 'horizon:murano:packages:upload'
     classes = ('ajax-modal',)
     icon = "plus"
+    policy_rules = (("murano", "upload_package"),)
 
     def allowed(self, request, package):
         _allowed = False
@@ -63,6 +67,7 @@ class DownloadPackage(tables.LinkAction):
     name = 'download_package'
     verbose_name = _('Download Package')
     url = 'horizon:murano:packages:download'
+    policy_rules = (("murano", "download_package"),)
 
     def allowed(self, request, package):
         return True
@@ -76,6 +81,7 @@ class ToggleEnabled(tables.BatchAction):
     name = 'toggle_enabled'
     verbose_name = _("Toggle Enabled")
     icon = "toggle-on"
+    policy_rules = (("murano", "modify_package"),)
 
     @staticmethod
     def action_present(count):
@@ -111,6 +117,7 @@ class TogglePublicEnabled(tables.BatchAction):
     name = 'toggle_public_enabled'
     verbose_name = _("Toggle Public")
     icon = "share-alt"
+    policy_rules = (("murano", "publicize_package"),)
 
     @staticmethod
     def action_present(count):
@@ -151,8 +158,9 @@ class TogglePublicEnabled(tables.BatchAction):
                 redirect=reverse('horizon:murano:packages:index'))
 
 
-class DeletePackage(tables.DeleteAction):
+class DeletePackage(policy.PolicyTargetMixin, tables.DeleteAction):
     name = 'delete_package'
+    policy_rules = (("murano", "delete_package"),)
 
     @staticmethod
     def action_present(count):
@@ -200,15 +208,17 @@ class ModifyPackage(tables.LinkAction):
     url = 'horizon:murano:packages:modify'
     classes = ('ajax-modal',)
     icon = "edit"
+    policy_rules = (("murano", "modify_package"),)
 
     def allowed(self, request, package):
         return True
 
 
 class PackageDefinitionsTable(tables.DataTable):
-    name = tables.Column('name',
-                         link="horizon:murano:packages:detail",
-                         verbose_name=_('Package Name'))
+    name = md_utils.Column(
+        'name',
+        link="horizon:murano:packages:detail",
+        verbose_name=_('Package Name'))
     tenant_name = tables.Column('tenant_name', verbose_name=_('Tenant Name'))
     enabled = tables.Column('enabled', verbose_name=_('Active'))
     is_public = tables.Column('is_public', verbose_name=_('Public'))
