@@ -1,16 +1,17 @@
 # Akihiro Motoki <amotoki@gmail.com>, 2016. #zanata
 # Andreas Jaeger <jaegerandi@gmail.com>, 2016. #zanata
 # Shu Muto <shu-mutou@rf.jp.nec.com>, 2016. #zanata
+# Yoshiki Eguchi <yoshiki.eguchi@gmail.com>, 2016. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: murano-dashboard 3.0.0.0b3.dev35\n"
+"Project-Id-Version: murano-dashboard 3.0.0.0rc2.dev6\n"
 "Report-Msgid-Bugs-To: https://bugs.launchpad.net/openstack-i18n/\n"
-"POT-Creation-Date: 2016-08-11 12:16+0000\n"
+"POT-Creation-Date: 2016-09-27 03:19+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2016-06-16 05:47+0000\n"
-"Last-Translator: Shu Muto <shu-mutou@rf.jp.nec.com>\n"
+"PO-Revision-Date: 2016-09-26 12:50+0000\n"
+"Last-Translator: Yoshiki Eguchi <yoshiki.eguchi@gmail.com>\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
 "X-Generator: Zanata 3.7.3\n"
@@ -173,6 +174,9 @@ msgstr "クラス定義フォルダー"
 msgid "Click to create new environment"
 msgstr "クリックして、新しい環境を作成します。"
 
+msgid "Completed with warnings"
+msgstr "警告付き完了"
+
 msgid "Component"
 msgstr "コンポーネント"
 
@@ -253,6 +257,9 @@ msgid "Delete Package"
 msgid_plural "Delete Packages"
 msgstr[0] "パッケージの削除"
 
+msgid "Delete failure"
+msgstr "削除失敗"
+
 msgid "Deleted Category"
 msgid_plural "Deleted Categories"
 msgstr[0] "カテゴリーを削除しました"
@@ -265,6 +272,9 @@ msgid "Deleted Package"
 msgid_plural "Deleted Packages"
 msgstr[0] "パッケージを削除しました"
 
+msgid "Deleting"
+msgstr "削除中"
+
 msgid "Deploy Environment"
 msgid_plural "Deploy Environments"
 msgstr[0] "環境のデプロイ"
@@ -272,11 +282,17 @@ msgstr[0] "環境のデプロイ"
 msgid "Deploy This Environment"
 msgstr "この環境のデプロイ"
 
+msgid "Deploy failure"
+msgstr "デプロイ失敗"
+
 msgid "Deploy started"
 msgstr "デプロイを開始しました"
 
 msgid "Deployed Components"
 msgstr "デプロイ済みコンポーネント"
+
+msgid "Deploying"
+msgstr "デプロイ中"
 
 msgid "Deployment Details"
 msgstr "デプロイの詳細"
@@ -362,6 +378,9 @@ msgstr "実行プランフォルダー"
 
 msgid "FQN"
 msgstr "FQN"
+
+msgid "Failed"
+msgstr "失敗"
 
 msgid "Failed to create environment"
 msgstr "環境の作成に失敗しました"
@@ -686,6 +705,15 @@ msgstr "パブリック"
 msgid "Quick Deploy"
 msgstr "クイックデプロイ"
 
+msgid "Ready"
+msgstr "準備完了"
+
+msgid "Ready to configure"
+msgstr "設定準備完了"
+
+msgid "Ready to deploy"
+msgstr "デプロイの準備完了"
+
 msgid "Recent Activity"
 msgstr "最近の使用状況"
 
@@ -703,6 +731,9 @@ msgstr "要件"
 
 msgid "Retype your password"
 msgstr "パスワードの再入力"
+
+msgid "Running"
+msgstr "実行中"
 
 msgid "Select Application"
 msgstr "アプリケーションの選択"
@@ -760,10 +791,13 @@ msgid_plural "Started deploying Environments"
 msgstr[0] "環境のデプロイを開始しました"
 
 msgid "Status"
-msgstr "状態"
+msgstr "ステータス"
 
 msgid "Step {0}"
 msgstr "手順 {0}"
+
+msgid "Successful"
+msgstr "成功"
 
 msgid "Tags"
 msgstr "タグ"
@@ -793,6 +827,9 @@ msgstr ""
 "バンドルは <a href=\"%(murano_repo_url)s\" target=\"_blank\">"
 "%(murano_repo_url)s</a> リポジトリーからインストールされます。"
 
+msgid "The environment name field cannot be empty."
+msgstr "環境名は空にできません。"
+
 #, python-format
 msgid ""
 "The package is going to be imported from <a href=\"%(murano_repo_url)s\" "
@@ -818,6 +855,12 @@ msgstr ""
 
 msgid "There are no applications matching your criteria."
 msgstr "基準を満たすアプリケーションはありません。"
+
+msgid "There was an error communicating with server"
+msgstr "サーバとの通信中にエラーが発生しました。"
+
+msgid "There was an error initialising this field."
+msgstr "このフィールドの初期化中にエラーが発生しました。"
 
 msgid ""
 "This action cannot be undone. Any resources created by this environment will "
@@ -893,6 +936,9 @@ msgstr "URL"
 msgid "Unable to abandon an environment {0} due to: {1}"
 msgstr "環境 {0} を中断できませんでした。理由: {1}"
 
+msgid "Unable to communicate to glare-api server."
+msgstr "glare-api サーバーと通信できません。"
+
 msgid "Unable to communicate to murano-api server."
 msgstr "murano-api サーバーと通信できません。"
 
@@ -959,6 +1005,9 @@ msgstr "公開イメージの一覧を取得できません。"
 
 msgid "Unavailable"
 msgstr "利用不可"
+
+msgid "Unknown"
+msgstr "不明"
 
 msgid "Update"
 msgstr "更新"
