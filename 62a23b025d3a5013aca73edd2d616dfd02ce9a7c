@@ -1,0 +1,9 @@
+Verified+1: Murano CI
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Workflow+1: Serg Melikyan <smelikyan@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 01 Dec 2016 17:57:19 +0000
+Reviewed-on: https://review.openstack.org/405251
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/master
