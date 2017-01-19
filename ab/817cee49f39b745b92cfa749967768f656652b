@@ -1,0 +1,10 @@
+Code-Review+2: zhurong <aaronzhu1121@gmail.com>
+Verified+1: Murano CI
+Code-Review+2: Felipe Monteiro <felipe.monteiro@att.com>
+Workflow+1: Felipe Monteiro <felipe.monteiro@att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 19 Jan 2017 17:11:51 +0000
+Reviewed-on: https://review.openstack.org/422492
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/master
