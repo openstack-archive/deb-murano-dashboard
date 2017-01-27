@@ -1,0 +1,11 @@
+Verified+1: Murano CI
+Code-Review+2: Kirill Zaitsev <k.zaitsev@me.com>
+Code-Review+1: Margarita Shakhova <shakhova.margarita@gmail.com>
+Code-Review+2: Victor Ryzhenkin (freerunner) <vryzhenkin@mirantis.com>
+Workflow+1: Victor Ryzhenkin (freerunner) <vryzhenkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 27 Jan 2017 01:30:54 +0000
+Reviewed-on: https://review.openstack.org/414739
+Project: openstack/deb-murano-dashboard
+Branch: refs/heads/master
